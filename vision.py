@@ -1,5 +1,5 @@
 import functools
-import os
+import glob
 
 import cv2
 import numpy as np
@@ -11,10 +11,17 @@ import sigmar_garden
 
 def get_cell_images() -> list[sigmar_garden.Cell, Image.Image]:
     for cell in sigmar_garden.Cell:
-        paths = [f"cell_active/{cell.name}.png", f"cell_inactive/{cell.name}.png"]
-        for path in paths:
-            if os.path.exists(path):
-                yield cell, imread(path)
+        for path in get_cell_image_paths(cell):
+            yield cell, imread(path)
+
+
+def get_cell_image_paths(cell: sigmar_garden.Cell) -> list[str]:
+    return glob.glob(f"data/{cell.name}_*.png")
+
+
+def save_cell_image(cell: sigmar_garden.Cell, image: Image.Image):
+    index = len(get_cell_image_paths(cell))
+    image.save(f"data/{cell.name}_{index}.png")
 
 
 @functools.cache
@@ -54,30 +61,25 @@ def threshold(image: cv2.Mat) -> cv2.Mat:
     )
 
 
-def blur(image: cv2.Mat) -> cv2.Mat:
-    return cv2.GaussianBlur(image, (5, 5), 0)
-
-
-def erode_delate(image: cv2.Mat) -> cv2.Mat:
-    kernel = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], np.uint8)
-    return cv2.erode(cv2.dilate(image, kernel), kernel)
-
 
 class CellRecognizer:
     def __init__(self):
-        features = []
-        labels = []
+        self.labels = []
+        # features = []
+        images = []
         for cell, image in get_cell_images():
-            # cv2.imshow(cell.name, transform(image))
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
-            features.append(get_features(image))
-            labels.append(cell.value)
-        self.classifier = RidgeClassifier()
-        self.classifier.fit(features, labels)
+            self.labels.append(cell.value)
+            # features.append(get_features(image))
+            images.append(np.array(image))
+        # self.classifier = RidgeClassifier()
+        # self.classifier.fit(features, self.labels)
+        self.images = np.concatenate(images)
 
     def recognize(self, image: Image.Image) -> sigmar_garden.Cell:
-        label = self.classifier.predict([get_features(image)])[0]
+        # label = self.classifier.predict([get_features(image)])[0]
+        match = cv2.matchTemplate(self.images, np.array(image), cv2.TM_SQDIFF_NORMED)
+        _, _, loc, _ = cv2.minMaxLoc(match)
+        label = self.labels[(loc[1] + (image.height // 2)) // 50]
         return sigmar_garden.Cell(label)
 
 
