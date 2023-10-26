@@ -1,41 +1,12 @@
 import random
 import time
 
-import cv2
 import pyautogui as pag
 import pyscreeze
 
 import sigmar_garden
 import vision
-
-CELL_HEIGHT = 50
-CELL_WIDTH = 50
-
-
-def get_cell_positions(board_bbox: pyscreeze.Box) -> list[pag.Point]:
-    height_padding = 20
-    dx = board_bbox.width / 11
-    dy = (board_bbox.height - height_padding) / 11
-    center = pag.Point(
-        board_bbox.left + (board_bbox.width / 2),
-        board_bbox.top + (board_bbox.height / 2),
-    )
-    for row_number in range(11):
-        row_number_relative_to_center = row_number - 5
-        y = int(center.y + (dy * (row_number_relative_to_center)))
-
-        cells_in_row = min(6 + row_number, 16 - row_number)
-        for cell_number in range(cells_in_row):
-            cell_number_relative_to_center = cell_number - ((cells_in_row - 1) / 2)
-            x = int(center.x + (dx * cell_number_relative_to_center))
-            yield pag.Point(x, y)
-
-
-def get_cell_region(point: pag.Point) -> tuple[int, int, int, int]:
-    # Returns (left, top, right, bottom) tuple.
-    left = int(point.x - (CELL_WIDTH / 2))
-    top = int(point.y - (CELL_HEIGHT / 2))
-    return (left, top, left + CELL_WIDTH, top + CELL_HEIGHT)
+import common
 
 
 def click(position: pag.Point):
@@ -79,17 +50,17 @@ def play_single_game(cell_recognizer: vision.CellRecognizer):
     print(f"* Found (at {board_bbox})")
 
     print("* Reading board cells...")
-    positions = list(get_cell_positions(board_bbox))
+    positions = list(common.get_cell_positions(board_bbox))
     screen = pag.screenshot()
     board = sigmar_garden.Board.new_board()
     for index, position in enumerate(positions):
-        # cell = get_cell(screen.crop(get_cell_region(position)))
-        cell = cell_recognizer.recognize(screen.crop(get_cell_region(position)))
+        cell = cell_recognizer.recognize(
+            screen.crop(common.get_cell_region(position, 40, 40))
+        )
         point = sigmar_garden.Point.from_index(index)
         board[point] = cell
     print("* Done. Board:")
     print(board)
-    input()
 
     # print("* Solving...")
     # moves = solve(board)
@@ -104,11 +75,6 @@ def play_single_game(cell_recognizer: vision.CellRecognizer):
             click(positions[point.to_index()])
         board = board.do_move(move)
         moves = list(board.get_moves())
-
-    # if board.is_solved():
-    #     print("*** SUCCESS!!!")
-    # else:
-    #     print("*** Failure...")
 
 
 def main():
@@ -131,7 +97,7 @@ def main():
 
         print("* Starting a new game!")
         click(newgame_pos)
-        time.sleep(6)
+        time.sleep(15)
 
 
 if __name__ == "__main__":
