@@ -1,12 +1,14 @@
 import random
 import time
+from datetime import datetime
+from functools import partial
 
 import pyautogui as pag
 import pyscreeze
 
+import common
 import sigmar_garden
 import vision
-import common
 
 
 def click(position: pag.Point):
@@ -32,7 +34,8 @@ def _solve(
         return False
     seen.add(board)
 
-    for move in board.get_moves():
+    next_moves = board.get_moves()
+    for move in sorted(next_moves, key=partial(get_move_score, board), reverse=True):
         moves.append(move)
         if _solve(board.do_move(move), moves, seen):
             return True
@@ -40,16 +43,35 @@ def _solve(
     return False
 
 
+def get_move_score(board: sigmar_garden.Board, move: sigmar_garden.Move) -> int:
+    cells = [board[point] for point in move.points]
+    if cells.count(sigmar_garden.Cell.SALT) == 1:
+        return 1  # discourage salt + element
+    return sum(map(get_cell_score, cells))
+
+
+def get_cell_score(cell: sigmar_garden.Cell) -> int:
+    if cell in sigmar_garden.ELEMENTS:
+        return 4
+    if cell in (sigmar_garden.Cell.VITAE, sigmar_garden.Cell.MORS):
+        return 3
+    if cell in (sigmar_garden.Cell.SALT, sigmar_garden.Cell.QUICKSILVER):
+        return 3
+    if cell in sigmar_garden.METALS:
+        return 2
+    return 0
+
+
 def play_single_game(cell_recognizer: vision.CellRecognizer):
-    print("* Looking for game board...")
+    print(datetime.now(), "- Looking for game board...")
     pag.moveTo(1, 1)
     board_bbox = pag.locateOnScreen("board.png", minSearchTime=10, confidence=0.9)
     if board_bbox is None:
         print("ERROR: could not find game board")
         return
-    print(f"* Found (at {board_bbox})")
+    print(datetime.now(), f"- Found (at {board_bbox})")
 
-    print("* Reading board cells...")
+    print(datetime.now(), "- Reading board cells...")
     positions = list(common.get_cell_positions(board_bbox))
     screen = pag.screenshot()
     board = sigmar_garden.Board.new_board()
@@ -59,26 +81,21 @@ def play_single_game(cell_recognizer: vision.CellRecognizer):
         )
         point = sigmar_garden.Point.from_index(index)
         board[point] = cell
-    print("* Done. Board:")
+    print(datetime.now(), "- Done. Board:")
     print(board)
 
-    # print("* Solving...")
-    # moves = solve(board)
+    print(datetime.now(), "- Solving...")
+    moves = solve(board)
 
-    print("* Playing...")
-    # for move in moves:
-    moves = list(board.get_moves())
-    while moves:
-        move = random.choice(moves)
+    print(datetime.now(), "- Playing...")
+    for move in moves:
         print(move)
         for point in move.points:
             click(positions[point.to_index()])
-        board = board.do_move(move)
-        moves = list(board.get_moves())
 
 
 def main():
-    print("* Starting...")
+    print(datetime.now(), "- Starting...")
     time.sleep(2)
 
     print("* Looking for newgame button...")
@@ -97,7 +114,7 @@ def main():
 
         print("* Starting a new game!")
         click(newgame_pos)
-        time.sleep(15)
+        time.sleep(10)
 
 
 if __name__ == "__main__":
