@@ -1,10 +1,8 @@
-import random
 import time
 from datetime import datetime
 from functools import partial
 
 import pyautogui as pag
-import pyscreeze
 
 import common
 import sigmar_garden
@@ -12,8 +10,8 @@ import vision
 
 
 def click(position: pag.Point):
-    pag.moveTo(*position, duration=0.2)
-    pag.mouseDown(duration=0.1)
+    pag.moveTo(position, duration=0.3)
+    pag.mouseDown()
     pag.mouseUp()
 
 
@@ -30,7 +28,8 @@ def _solve(
     if board.is_solved():
         return True
 
-    if board in seen:
+    # Limit the search space to fail faster
+    if board in seen or len(seen) > 30_000:
         return False
     seen.add(board)
 
@@ -86,33 +85,35 @@ def play_single_game(cell_recognizer: vision.CellRecognizer):
 
     print(datetime.now(), "- Solving...")
     moves = solve(board)
+    if not moves:
+        print(datetime.now(), "- Couldn't solve :(")
+        return
 
     print(datetime.now(), "- Playing...")
     for move in moves:
-        print(move)
         for point in move.points:
             click(positions[point.to_index()])
+    print(datetime.now(), "- Done!")
 
 
 def main():
     print(datetime.now(), "- Starting...")
     time.sleep(2)
 
-    print("* Looking for newgame button...")
+    print(datetime.now(), "- Looking for newgame button...")
     pag.moveTo(1, 1)
     newgame_pos = pag.locateCenterOnScreen("newgame.png", confidence=0.9)
     if newgame_pos is None:
         print("ERROR: could not find newgame button")
         return
-    print(f"* Found (at {newgame_pos})")
+    print(datetime.now(), f"- Found (at {newgame_pos})")
 
     cell_recognizer = vision.CellRecognizer()
-
     while True:
         play_single_game(cell_recognizer)
         time.sleep(1)
 
-        print("* Starting a new game!")
+        print(datetime.now(), "- Starting a new game!")
         click(newgame_pos)
         time.sleep(10)
 
