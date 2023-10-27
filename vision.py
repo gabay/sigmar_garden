@@ -4,7 +4,6 @@ import glob
 import cv2
 import numpy as np
 from PIL import Image
-from sklearn.linear_model import RidgeClassifier
 
 import sigmar_garden
 
@@ -16,12 +15,12 @@ def get_cell_images() -> list[sigmar_garden.Cell, Image.Image]:
 
 
 def get_cell_image_paths(cell: sigmar_garden.Cell) -> list[str]:
-    return glob.glob(f"data/{cell.name}_*.png")
+    return glob.glob(f"data/{cell.name}/*.png")
 
 
 def save_cell_image(cell: sigmar_garden.Cell, image: Image.Image):
     index = len(get_cell_image_paths(cell))
-    image.save(f"data/{cell.name}_{index}.png")
+    image.save(f"data/{cell.name}/{index}.png")
 
 
 @functools.cache
@@ -59,7 +58,6 @@ def threshold(image: cv2.Mat) -> cv2.Mat:
         5,
         -1,
     )
-
 
 
 class CellRecognizer:

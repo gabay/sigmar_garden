@@ -22,16 +22,11 @@ def main():
     cell_recognizer = vision.CellRecognizer()
 
     print("* Starting...")
-    # time.sleep(1)
-    # screen = Image.open(
-    #     "/home/roi/Pictures/Screenshots/Screenshot from 2023-10-24 00-47-16.png"
-    # )
     screen = pag.screenshot()
 
     print("* Looking for game board...")
     pag.moveTo(1, 1)
-    # board_bbox = pag.locateOnScreen("board.png", minSearchTime=10, confidence=0.9)
-    board_bbox = pag.locate("board.png", screen, confidence=0.9)
+    board_bbox = pag.locateOnScreen("data/board.png", minSearchTime=10, confidence=0.9)
     if board_bbox is None:
         print("ERROR: could not find game board")
         return

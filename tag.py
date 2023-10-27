@@ -6,9 +6,10 @@ import numpy as np
 import pyautogui as pag
 from PIL import Image
 
+import common
 import sigmar_garden
 import vision
-import common
+
 
 def get_cell(image: Image.Image) -> Optional[sigmar_garden.Cell]:
     image_cv2 = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
@@ -43,7 +44,7 @@ class Tagger:
 def main():
     print("* Looking for game board...")
     pag.moveTo(1, 1)
-    board_bbox = pag.locateOnScreen("board.png", minSearchTime=10, confidence=0.9)
+    board_bbox = pag.locateOnScreen("data/board.png", minSearchTime=10, confidence=0.9)
     if board_bbox is None:
         print("ERROR: did not find board")
         sys.exit()

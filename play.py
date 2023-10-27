@@ -64,7 +64,7 @@ def get_cell_score(cell: sigmar_garden.Cell) -> int:
 def play_single_game(cell_recognizer: vision.CellRecognizer):
     print(datetime.now(), "- Looking for game board...")
     pag.moveTo(1, 1)
-    board_bbox = pag.locateOnScreen("board.png", minSearchTime=10, confidence=0.9)
+    board_bbox = pag.locateOnScreen("data/board.png", minSearchTime=10, confidence=0.9)
     if board_bbox is None:
         print("ERROR: could not find game board")
         return
@@ -102,7 +102,7 @@ def main():
 
     print(datetime.now(), "- Looking for newgame button...")
     pag.moveTo(1, 1)
-    newgame_pos = pag.locateCenterOnScreen("newgame.png", confidence=0.9)
+    newgame_pos = pag.locateCenterOnScreen("data/newgame.png", confidence=0.9)
     if newgame_pos is None:
         print("ERROR: could not find newgame button")
         return
